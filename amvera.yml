@@ -2,6 +2,7 @@ meta:
   environment: python
   python:
     version: 3.11
+      toolchain: python
 
 build:
   command: pip install -r requirements.txt
