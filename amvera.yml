@@ -1,12 +1,8 @@
 meta:
   environment: python
-  python:
+  toolchain:
+    name: pip
     version: 3.11
-      toolchain: python
-
-build:
-  command: pip install -r requirements.txt
 
 run:
-  command: python app.py
-  
+  scriptName: app.py
