@@ -365,7 +365,7 @@ def board_view(group_id):
     annos = Announcement.query.filter_by(group_id=group_id).order_by(Announcement.is_important.desc(), Announcement.created_at.desc()).all()
     is_adm = (current_user.role == 'admin')
     
-    html = f"""
+    html  ="""
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
         <div>
             <h1 style="margin:0; color:var(--text-main);">Доска объявлений</h1>
