@@ -28,12 +28,12 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(user_id)
+        return db.session.get(User, user_id)
 
     with app.app_context():
         db.create_all()
         # Создаем админа, если его нет
-        if not User.query.get('admin'):
+        if not db.session.get(User, 'admin')
             # Логин: admin, Пароль: admin
             admin = User(id='admin', password='admin', role='admin', access_group='all')
             db.session.add(admin)
