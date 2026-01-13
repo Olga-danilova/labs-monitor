@@ -1,0 +1,10 @@
+meta:
+  environment: python
+  python:
+    version: 3.11
+
+build:
+  command: pip install -r requirements.txt
+
+run:
+  command: python app.py
