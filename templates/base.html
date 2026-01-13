@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг оценок</title>
+    <!-- Шрифт: Nunito (более округлый и дружелюбный, подходит под стиль) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            /* --- ПАЛИТРА DIGITAL LAVENDER --- */
+            --primary: #8B5C96; 
+            --primary-light: #A77CB3;
+            --primary-bg: #F5F0F8; /* Очень светлый лавандовый фон */
+            
+            --bg-body: #F8FAFC;    /* Холодный белый (как на референсе) */
+            --bg-card: #FFFFFF;
+            
+            --text-main: #2D3748;
+            --text-muted: #718096;
+            
+            --border: #E2E8F0;
+            
+            /* Цвета статусов (мягкие, "конфетные") */
+            --green: #4ADE80;  --green-bg: #DCFCE7;  --green-text: #166534;
+            --red: #F87171;    --red-bg: #FEF2F2;    --red-text: #991B1B;
+            --purple: #C084FC; --purple-bg: #FAF5FF; --purple-text: #6B21A8;
+            --yellow: #FBBF24; --yellow-bg: #FFFBEB; --yellow-text: #92400E;
+
+            --radius: 24px;    /* Глобальное сильное скругление */
+            --shadow: 0 10px 25px -5px rgba(139, 92, 150, 0.15), 0 8px 10px -6px rgba(139, 92, 150, 0.1);
+        }
+
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 40px; 
+            background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            /* Нет фона у контейнера, чтобы карточки "парили" на общем фоне */
+            background: transparent;
+            min-height: 85vh; 
+        }
+        
+        /* --- ШАПКА --- */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 40px; 
+            background: var(--bg-card);
+            padding: 20px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            background: var(--primary-bg);
+            color: var(--primary);
+            width: 45px; height: 45px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+        }
+        
+        /* --- КНОПКИ --- */
+        .btn { 
+            padding: 12px 24px; 
+            border-radius: 16px; /* Пухлые кнопки */
+            border: none;
+            background: var(--bg-card); 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 0.95rem; 
+            transition: all 0.2s ease; 
+            color: var(--text-muted);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn:hover { 
+            background: #fff; 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            color: var(--primary);
+        }
+        .btn-prim { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(139, 92, 150, 0.3); 
+        }
+        .btn-prim:hover { 
+            background: var(--primary-light); 
+            color: white;
+            box-shadow: 0 6px 16px rgba(139, 92, 150, 0.4);
+        }
+        
+        /* Кнопки переключения семестров */
+        .sem-toggle {
+            background: white;
+            padding: 5px;
+            border-radius: 18px;
+            display: flex;
+            box-shadow: var(--shadow);
+        }
+        .sem-btn {
+            padding: 8px 20px;
+            border-radius: 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sem-btn.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+
+        /* --- ТАБЛИЦА (Мягкий стиль) --- */
+        .table-wrap { 
+            overflow: auto; 
+            position: relative; 
+            border-radius: var(--radius); 
+            background: white;
+            box-shadow: var(--shadow);
+            border: 1px solid white; /* Убираем серую рамку */
+        }
+        table { width: 100%; border-collapse: collapse; } /* collapse для слитности */
+        
+        th { 
+            background: #F9FAFB; 
+            padding: 18px 12px; 
+            font-size: 0.85rem; 
+            color: #94A3B8; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--bg-body); /* Мягкий разделитель */
+        }
+        td { 
+            padding: 12px; 
+            border-bottom: 1px solid var(--bg-body);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+
+        /* Липкие колонки */
+        .fixed-c { 
+            position: sticky; 
+            left: 0; 
+            background: white; 
+            z-index: 20; 
+            box-shadow: 2px 0 5px rgba(0,0,0,0.02); /* Очень легкая тень справа */
+            border-right: 1px solid var(--bg-body);
+        }
+
+        /* --- ЯЧЕЙКИ СТАТУСОВ --- */
+        .cell-present { background-color: var(--green-bg); color: var(--green-text); }
+        .cell-absent  { background-color: var(--red-bg);   color: var(--red-text); }
+        .cell-sick    { background-color: var(--purple-bg); color: var(--purple-text); }
+        
+        /* Кружочки оценок */
+        .mark-circle { 
+            width: 36px; height: 36px; 
+            border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            margin: 0 auto; 
+            font-weight: 800; color: white; 
+            font-size: 1rem; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .v5 { background: var(--green); }
+        .v4 { background: var(--primary); }
+        .v3 { background: var(--yellow); }
+        .v2 { background: var(--red); }
+        
+        .old-g {
+            position: absolute; top: -6px; right: -6px; 
+            font-size: 0.7rem; color: #9CA3AF; 
+            text-decoration: line-through; 
+            background: white; 
+            padding: 2px 5px; border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 700;
+        }
+
+        /* --- КАРТОЧКИ --- */
+        .group-card { 
+            background: white;
+            border-radius: var(--radius); 
+            padding: 30px; 
+            border: none;
+            box-shadow: var(--shadow);
+            transition: 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .group-card::before {
+            content:''; position:absolute; top:0; left:0; width:6px; height:100%;
+            background: var(--primary); opacity:0; transition:0.3s;
+        }
+        .group-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 20px 40px -5px rgba(139, 92, 150, 0.2); 
+        }
+        .group-card:hover::before { opacity: 1; }
+
+        /* Прогресс бар */
+        .prog-wrap {
+            height: 10px; width: 100%; background: var(--bg-body); 
+            border-radius: 10px; overflow: hidden; margin-top: 15px;
+        }
+        .prog-fill {
+            height: 100%; background: var(--primary); 
+            border-radius: 10px; transition: width 1s ease;
+        }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 255, 255, 0.6); 
+            backdrop-filter: blur(8px); 
+            display: none; justify-content: center; align-items: center; 
+            z-index: 1000; 
+        }
+        .modal { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 30px; 
+            width: 450px; max-width: 90%; 
+            box-shadow: 0 25px 50px -12px rgba(139, 92, 150, 0.25); 
+            border: 1px solid white;
+        }
+        
+        .inp, textarea, select { 
+            width: 100%; 
+            padding: 14px 18px; 
+            margin-bottom: 16px; 
+            background: var(--bg-body);
+            border: 2px solid transparent; 
+            border-radius: 16px; 
+            font-family: inherit; font-weight: 600; font-size: 0.95rem; 
+            outline: none; transition: 0.2s;
+            color: var(--text-main);
+        }
+        .inp:focus, textarea:focus, select:focus {
+            background: white;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px var(--primary-bg);
+        }
+
+        /* Вспомогательные классы */
+        .badge {
+            background: var(--primary-bg); color: var(--primary);
+            padding: 6px 12px; border-radius: 12px;
+            font-weight: 800; font-size: 0.8rem;
+        }
+        
+        /* Скроллбар */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        .hidden-col { display: none; }
+        .active-filter { background: var(--primary) !important; color: white !important; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo-text">
+                <div class="logo-icon">📊</div>
+                Мониторинг оценок
+            </div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="text-align:right;">
+                    <div style="font-weight:700; font-size:1rem;">Данилова О.С.</div>
+                    <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600;">Преподаватель</div>
+                </div>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.logout') }}" class="btn" style="color:var(--red); background:var(--red-bg);">
+                    Выйти
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Контент -->
+        {{ content|safe }}
+    </div>
+
+    <!-- --- МОДАЛЬНЫЕ ОКНА (код тот же, стиль новый) --- -->
+
+    <!-- MODAL: Group Settings -->
+    <div id="m-gset" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:var(--primary);">⚙️ Настройки</h3>
+            <form action="/api/update_group" method="POST">
+                <input type="hidden" name="gid" id="gs-gid">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-left:5px;">Группа</label>
+                <input class="inp" id="gs-id" disabled style="opacity:0.6;">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-left:5px;">Предмет</label>
+                <input class="inp" name="subject" id="gs-sub">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-left:5px;">Пароль</label>
+                <input class="inp" name="password" id="gs-pwd">
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Сохранить</button>
+            </form>
+            <form action="/api/delete_group" method="POST" onsubmit="return confirm('Удалить группу безвозвратно?');">
+                 <input type="hidden" name="gid" id="gs-del-gid">
+                 <button class="btn" style="width:100%; color:var(--red); background:white; justify-content:center; margin-top:10px;">Удалить группу</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; border:none; background:transparent; justify-content:center;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: New Group -->
+    <div id="m-ng" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:var(--primary);">✨ Новая группа</h3>
+            <form action="/api/add_group" method="POST">
+                <input class="inp" name="name" placeholder="Название (напр. 22-ИТ)" required>
+                <input class="inp" name="subject" placeholder="Предмет" required>
+                <input class="inp" name="password" placeholder="Пароль для студентов" required>
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Создать</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent;" onclick="closeM()">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Student -->
+    <div id="m-student" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:var(--primary);">👤 Студент</h3>
+            <form action="/api/add_student" method="POST">
+                <input type="hidden" name="gid" id="s-gid">
+                <input class="inp" name="name" placeholder="ФИО" required>
+                <div style="background:var(--bg-body); padding:15px; border-radius:16px; margin-bottom:20px; display:flex; gap:20px;">
+                    <label style="font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="radio" name="subgroup" value="1" checked> 1 подгруппа
+                    </label>
+                    <label style="font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="radio" name="subgroup" value="2"> 2 подгруппа
+                    </label>
+                </div>
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Добавить</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent;  justify-content:center;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Lesson -->
+    <div id="m-lesson" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:var(--primary);">📅 Занятие</h3>
+            <form action="/api/add_column" method="POST">
+                <input type="hidden" name="gid" id="l-gid">
+                <div style="display:flex; gap:10px;">
+                    <input class="inp" name="date" type="date" required style="flex:2;">
+                    <input class="inp" name="hours" type="number" value="2" required style="flex:1;">
+                </div>
+                <input class="inp" name="type" placeholder="Тип (Лекция, Лаб...)" required list="ltypes">
+                <datalist id="ltypes"><option value="Лекция"><option value="Лаб.раб"><option value="Практика"><option value="Экзамен"></datalist>
+                <input class="inp" name="number" type="number" placeholder="Номер (необязательно)">
+                <div style="margin-bottom:15px;">
+    <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-left:5px; display:block; margin-bottom:10px;">Для кого занятие:</label>
+    <div class="sem-toggle">
+        <button type="button" class="sem-btn active" id="sg_all" onclick="setSG(0)">Вся группа</button>
+        <button type="button" class="sem-btn" id="sg_1" onclick="setSG(1)">Подгруппа 1</button>
+        <button type="button" class="sem-btn" id="sg_2" onclick="setSG(2)">Подгруппа 2</button>
+    </div>
+    <input type="hidden" name="subgroup_target" id="sg_val" value="0">
+</div>
+
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Создать</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Plan -->
+    <div id="m-plan" class="modal-overlay">
+        <div class="modal" style="width:500px;">
+            <h3 style="margin-top:0; color:var(--primary);">📋 Учебный план</h3>
+            <form action="/api/update_plan" method="POST" onsubmit="savePlanJson()">
+                <input type="hidden" name="gid" id="p-gid">
+                <input type="hidden" name="plan_data" id="p-data">
+                <div id="plan-rows" style="max-height:300px; overflow-y:auto; margin-bottom:20px;"></div>
+                <button type="button" class="btn" onclick="addPlanRow()" style="width:100%; border:2px dashed var(--border); background:white; color:var(--text-muted); margin-bottom:15px;">+ Добавить строку</button>
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Сохранить план</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Announcement -->
+    <div id="m-anno" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:var(--primary);">📢 Объявление</h3>
+            <form action="/api/add_anno" method="POST">
+                <input type="hidden" name="gid" id="a-gid">
+                <textarea class="inp" name="text" rows="5" placeholder="Текст..." required></textarea>
+                <label style="display:flex; align-items:center; gap:10px; margin-bottom:20px; cursor:pointer; background:var(--red-bg); padding:10px; border-radius:12px;">
+                    <input type="checkbox" name="is_important" value="1">
+                    <span style="color:var(--red-text); font-weight:800;">Важное сообщение</span>
+                </label>
+                <button class="btn btn-prim" style="width:100%; justify-content:center;">Опубликовать</button>
+            </form>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Grade -->
+    <div id="m-grade" class="modal-overlay">
+        <div class="modal">
+            <h3 id="g-title" style="margin-top:0; color:var(--primary);">Оценка</h3>
+            
+            <div id="max-hint" style="background:var(--bg-body); color:var(--primary); padding:10px; border-radius:12px; margin-bottom:15px; font-weight:700; font-size:0.9rem; text-align:center;">
+                Максимум: 5
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:25px;">
+                <button class="btn" style="background:var(--green-bg); color:var(--green-text); flex:1; justify-content:center;" onclick="setSt('present')">Был</button>
+                <button class="btn" style="background:var(--red-bg); color:var(--red-text); flex:1; justify-content:center;" onclick="setSt('absent')">Н</button>
+                <button class="btn" style="background:var(--purple-bg); color:var(--purple-text); flex:1; justify-content:center;" onclick="setSt('sick')">Спр</button>
+            </div>
+
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-bottom:10px; display:block;">Оценка:</label>
+            <div style="display:flex; gap:10px; margin-bottom:25px;">
+                <button class="btn" onclick="setG(5)" id="btn-5" style="background:var(--green); color:white; font-size:1.2rem; flex:1; justify-content:center;">5</button>
+                <button class="btn" onclick="setG(4)" id="btn-4" style="background:var(--primary); color:white; font-size:1.2rem; flex:1; justify-content:center;">4</button>
+                <button class="btn" onclick="setG(3)" id="btn-3" style="background:var(--yellow); color:white; font-size:1.2rem; flex:1; justify-content:center;">3</button>
+                <button class="btn" onclick="setG(2)" style="background:var(--red); color:white; font-size:1.2rem; flex:1; justify-content:center;">2</button>
+                <button class="btn" onclick="setG(null)" style="background:var(--bg-body); color:var(--text-muted); flex:1; justify-content:center;">✕</button>
+            </div>
+            
+            <button class="btn btn-prim" style="width:100%; justify-content:center;" onclick="saveM()">Сохранить</button>
+            <button class="btn" style="width:100%; margin-top:10px; background:transparent; justify-content:center;" onclick="closeM()">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        const IS_ADMIN = {{ js_flag }};
+        let curGid, curSid, curCid, curSt, curGr;
+        
+        function closeM() { 
+            document.querySelectorAll('.modal-overlay').forEach(e => {
+                e.style.opacity = '0';
+                setTimeout(() => e.style.display = 'none', 200);
+            });
+        }
+        function openM(id) {
+            const el = document.getElementById(id);
+            el.style.display = 'flex';
+            el.style.opacity = '0';
+            setTimeout(() => el.style.opacity = '1', 10);
+        }
+
+        // --- ФУНКЦИИ ОТКРЫТИЯ ОКОН ---
+        function openNG() { openM('m-ng'); }
+        function openS(gid) { document.getElementById('s-gid').value = gid; openM('m-student'); }
+        function openL(gid) { document.getElementById('l-gid').value = gid; openM('m-lesson'); }
+        function openAnno(gid) { document.getElementById('a-gid').value = gid; openM('m-anno'); }
+        
+        function openGSet(id, subj, pwd) {
+            document.getElementById('gs-gid').value = id;
+            document.getElementById('gs-del-gid').value = id;
+            document.getElementById('gs-id').value = id;
+            document.getElementById('gs-sub').value = subj;
+            document.getElementById('gs-pwd').value = pwd;
+            openM('m-gset');
+        }
+
+        function openP(gid, jsonStr) {
+            document.getElementById('p-gid').value = gid;
+            const container = document.getElementById('plan-rows'); container.innerHTML = '';
+            let data = []; try { data = JSON.parse(jsonStr); } catch(e) {}
+            if (data.length === 0) data = [{name:'Лекция', hours:0}, {name:'Лаб.раб', hours:0}];
+            data.forEach(row => addPlanRow(row.name, row.hours));
+            openM('m-plan');
+        }
+        function addPlanRow(name='', hours=0) {
+            const div = document.createElement('div'); div.className = 'plan-row'; div.style = 'display:flex; gap:10px; margin-bottom:10px;';
+            div.innerHTML = `<input class="inp" placeholder="Тип" value="${name}" style="flex:2; margin:0;"><input class="inp" type="number" placeholder="Часы" value="${hours}" style="flex:1; margin:0;"><button type="button" class="btn" onclick="this.parentElement.remove()" style="color:var(--red); background:transparent;">✕</button>`;
+            document.getElementById('plan-rows').appendChild(div);
+        }
+        function savePlanJson() {
+            const rows = document.querySelectorAll('.plan-row'); let data = [];
+            rows.forEach(r => { const inps = r.querySelectorAll('input'); if(inps[0].value) data.push({name: inps[0].value, hours: parseInt(inps[1].value) || 0}); });
+            document.getElementById('p-data').value = JSON.stringify(data);
+        }
+
+        function openGrade(gid, sid, cid, sname, ldate, ltype, jsonMark, isBlocked, maxGrade) {
+            if(!IS_ADMIN || isBlocked) return;
+            curGid=gid; curSid=sid; curCid=cid;
+            const m = JSON.parse(jsonMark); curSt = m.status; curGr = m.grade;
+            document.getElementById('g-title').innerText = `${sname}`;
+            
+            const hint = document.getElementById('max-hint');
+            hint.innerHTML = `Макс. балл: ${maxGrade}`;
+            
+            [5,4,3].forEach(n => {
+                const b = document.getElementById('btn-'+n);
+                if(maxGrade < n) b.style.opacity = '0.3'; else b.style.opacity = '1';
+            });
+            openM('m-grade');
+        }
+        
+        function setSt(st) { curSt = st; saveM(); }
+        function setG(gr) { curGr = gr; saveM(); }
+        function saveM() { fetch('/api/save', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({sid:curSid, cid:curCid, st:curSt, gr:curGr})}).then(r => location.reload()); }
+
+        function filterSG(sg) {
+            document.querySelectorAll('.sg-o').forEach(b => { b.classList.remove('active'); b.style.background='white'; b.style.color='var(--text-muted)'; });
+            const btn = document.getElementById('sg'+sg); btn.classList.add('active'); btn.style.background='var(--primary)'; btn.style.color='white';
+            
+            document.querySelectorAll('.st-row').forEach(r => { r.style.display = (sg === 'all' || r.dataset.sg === sg) ? '' : 'none'; });
+            document.querySelectorAll('th[data-sg], td[data-sg]').forEach(c => { const csg = c.getAttribute('data-sg'); if(sg === 'all' || csg == 0 || csg == sg) c.classList.remove('hidden-col'); else c.classList.add('hidden-col'); });
+        }
+
+        function delCol(gid, cid) { if(confirm('Удалить столбец?')) fetch('/api/delete_column', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cid:cid})}).then(()=>location.reload()); }
+        function delSt(gid, sid) { if(confirm('Удалить студента?')) fetch('/api/delete_student', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sid:sid})}).then(()=>location.reload()); }
+        function delAnno(aid) { if(confirm('Удалить объявление?')) fetch('/api/delete_anno', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({aid:aid})}).then(()=>location.reload()); }
+        
+        // Инит фильтра
+        filterSG('all');
+        function setSG(val) {
+    document.getElementById('sg_val').value = val;
+    document.querySelectorAll('#m-lesson .sem-btn').forEach(b => b.classList.remove('active'));
+    if(val === 0) document.getElementById('sg_all').classList.add('active');
+    else if(val === 1) document.getElementById('sg_1').classList.add('active');
+    else if(val === 2) document.getElementById('sg_2').classList.add('active');
+}
+
+    </script>
+</body>
+</html>
