@@ -640,3 +640,27 @@ def delete_student():
     s = Student.query.get(request.json['sid'])
     if s: db.session.delete(s); db.session.commit()
     return jsonify({'ok':True})
+
+@main_bp.route('/api/transfer_student', methods=['POST'])
+@login_required
+def transfer_student():
+    data = request.json
+    s = Student.query.get(data['sid'])
+    if not s: return "Err", 404
+    
+    # 1. Создаем запись в истории
+    # Важно: создаем копию списка, добавляем и перезаписываем, чтобы SQLAlchemy увидел изменение
+    new_record = {'date': data['date'], 'val': int(data['sg'])}
+    
+    current_hist = list(s.history) if s.history else []
+    current_hist.append(new_record)
+    s.history = current_hist
+    
+    # 2. Обновляем текущую группу (чтобы в списке он сразу стал отображаться правильно)
+    # Если дата перевода <= сегодня, то меняем подгруппу сразу
+    if data['date'] <= datetime.now().strftime('%Y-%m-%d'):
+        s.subgroup = int(data['sg'])
+        
+    db.session.commit()
+    return jsonify({'ok':True})
+
