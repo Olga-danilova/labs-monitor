@@ -25,7 +25,8 @@ class Student(db.Model):
     subgroup = db.Column(db.Integer, default=1)
     group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
     marks = db.relationship('Mark', backref='student', lazy=True, cascade="all, delete-orphan")
-
+    history = db.Column(db.JSON, default=[]) 
+    
 class Lesson(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     date = db.Column(db.String(20), nullable=False)
