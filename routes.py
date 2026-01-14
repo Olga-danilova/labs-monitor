@@ -35,6 +35,27 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     elif passed_chances == 2: return 4
     else: return 3
 
+def get_real_sg(student, lesson_date_str):
+    # 1. Получаем историю (если её нет — пустой список)
+    # Используем getattr, чтобы не было ошибки, если поля еще нет в БД
+    hist = getattr(student, 'history', []) 
+    
+    # 2. Если истории нет, возвращаем текущую подгруппу (как раньше)
+    if not hist: 
+        return student.subgroup
+        
+    # 3. Сортируем историю от новых к старым
+    # Ожидаем формат: [{'date': '2026-02-01', 'val': 2}, ...]
+    hist = sorted(hist, key=lambda x: x['date'], reverse=True)
+    
+    # 4. Ищем запись
+    for record in hist:
+        if record['date'] <= lesson_date_str:
+            return record['val']
+            
+    # 5. Если урок был до начала истории — берем самую старую запись
+    return hist[-1]['val']
+
 # --- МАРШРУТЫ ---
 
 @main_bp.route('/')
@@ -475,10 +496,16 @@ def group_view(group_id):
         
         sum_grades = 0; count_grades = 0
         for l in lessons:
+     
             m = next((x for x in s.marks if x.lesson_id==l.id), None)
-            is_bl = (l.subgroup_target!=0 and l.subgroup_target!=s.subgroup)
+            
+            # --- НОВОЕ: Вычисляем реальную подгруппу на дату урока ---
+            real_sg = get_real_sg(s, l.date)
+            is_bl = (l.subgroup_target!=0 and l.subgroup_target!=real_sg)
+            # ---------------------------------------------------------
             
             bg_cls = ""; html_mk = ""
+
             if not is_bl:
                 status = m.status if m else 'present'
                 if status == 'sick': bg_cls = "cell-sick"
