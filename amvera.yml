@@ -6,3 +6,4 @@ meta:
 
 run:
   scriptName: app.py
+  port: $PORT
