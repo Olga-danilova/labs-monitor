@@ -491,9 +491,12 @@ def group_view(group_id):
     tbl += "<th class='fixed-c' style='text-align:center; min-width:70px; background:#F9FAFB;'>Итог</th></tr></thead><tbody>"
 
     for s in students:
+        # Добавляем кнопку перевода (трансфер) только для админа
+        tr_btn = f"<span onclick='openTr(\"{s.id}\")' style='cursor:pointer; margin-left:8px; font-size:1.2rem;' title='Перевести'>🔄</span>" if is_adm else ""
         del_s = f"<span onclick='delSt(\"{group.id}\",\"{s.id}\")' style='color:var(--red); cursor:pointer; margin-left:10px; font-weight:bold;'>×</span>" if is_adm else ""
-        tbl += f"<tr class='st-row' data-sg='{s.subgroup}'><td class='fixed-c' style='font-weight:700; color:var(--text-main);'>{s.name} {del_s}</td>"
         
+        tbl += f"<tr class='st-row' data-sg='{s.subgroup}'><td class='fixed-c' style='font-weight:700; color:var(--text-main);'>{s.name}{tr_btn} {del_s}</td>"
+                
         sum_grades = 0; count_grades = 0
         for l in lessons:
      
