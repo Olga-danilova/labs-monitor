@@ -532,7 +532,65 @@ def group_view(group_id):
         
         final_html = f"<div style='background:var(--primary-bg); color:var(--primary); padding:4px 8px; border-radius:8px; font-weight:800; display:inline-block;'>{int(sum_grades/count_grades+0.5)} <span style='font-size:0.7em; opacity:0.8;'>({sum_grades/count_grades:.1f})</span></div>" if count_grades>0 else "-"
         tbl += f"<td class='fixed-c' style='text-align:center; background:white;'>{final_html}</td></tr>"
-    tbl += "</tbody></table></div>"
+        # --- МОДАЛЬНОЕ ОКНО ПЕРЕВОДА ---
+    tbl += """
+    <div id="modalTr" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:24px; width:320px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+            <h3 style="margin-top:0;">Перевод студента</h3>
+            
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; font-weight:bold; color:#64748B;">С какой даты:</label>
+                <input type="date" id="tr_date" class="inp" style="width:100%;">
+            </div>
+            
+            <div style="margin-bottom:25px;">
+                <label style="font-size:0.8rem; font-weight:bold; color:#64748B;">В какую подгруппу:</label>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <div id="btn_tr_1" onclick="selTr(1)" class="sem-btn" style="flex:1; text-align:center; cursor:pointer;">1</div>
+                    <div id="btn_tr_2" onclick="selTr(2)" class="sem-btn" style="flex:1; text-align:center; cursor:pointer;">2</div>
+                </div>
+            </div>
+            
+            <input type="hidden" id="tr_sid">
+            <button onclick="saveTr()" class="btn btn-prim" style="width:100%; justify-content:center; margin-bottom:10px;">Сохранить</button>
+            <button onclick="document.getElementById('modalTr').style.display='none'" class="btn" style="width:100%; justify-content:center;">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+    let curTrSg = 1;
+    
+    function openTr(sid) {
+        document.getElementById('modalTr').style.display = 'flex';
+        document.getElementById('tr_sid').value = sid;
+        // Ставим дату "Сегодня" по умолчанию
+        document.getElementById('tr_date').value = new Date().toISOString().split('T')[0];
+        selTr(1); // сброс на 1
+    }
+
+    function selTr(val) {
+        curTrSg = val;
+        document.getElementById('btn_tr_1').classList.remove('active');
+        document.getElementById('btn_tr_2').classList.remove('active');
+        document.getElementById('btn_tr_' + val).classList.add('active');
+    }
+
+    function saveTr() {
+        let sid = document.getElementById('tr_sid').value;
+        let date = document.getElementById('tr_date').value;
+        
+        fetch('/api/transfer_student', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ sid: sid, date: date, sg: curTrSg })
+        }).then(r => r.json()).then(res => {
+            if(res.ok) location.reload();
+            else alert('Ошибка');
+        });
+    }
+    </script>
+    """
+
 
     resp = make_response(render_app(nav + prog_bar + filters + tbl, is_admin=is_adm))
     resp.set_cookie(f'sem_{group_id}', str(raw_sem))
