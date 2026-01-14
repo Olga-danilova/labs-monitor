@@ -161,7 +161,7 @@ def admin_panel():
     html += "</div>"
     return render_app(html, is_admin=True)
 
-@main_bp.route('/group/<group_id>/stats')
+@main_bp.route('/group/<path:group_id>/stats')
 @login_required
 def stats_view(group_id):
     group = Group.query.get_or_404(group_id)
@@ -364,7 +364,7 @@ def stats_view(group_id):
     """
     return render_app(html, is_admin=(current_user.role=='admin'))
 
-@main_bp.route('/group/<group_id>/board')
+@main_bp.route('/group/<path:group_id>/board')
 @login_required
 def board_view(group_id):
     group = Group.query.get_or_404(group_id)
