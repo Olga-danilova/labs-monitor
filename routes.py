@@ -5,6 +5,7 @@ from models import User, Group, Student, Lesson, Mark, Plan, Announcement
 import json
 from datetime import datetime
 
+
 main_bp = Blueprint('main', __name__)
 
 # --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
@@ -415,6 +416,7 @@ def board_view(group_id):
 
 @main_bp.route('/group/<path:group_id>')
 @login_required
+
 def group_view(group_id):
     if current_user.role != 'admin' and current_user.access_group != group_id: return "Access denied"
     raw_sem = request.args.get('sem') or request.cookies.get(f'sem_{group_id}', '1')
@@ -586,8 +588,6 @@ def group_view(group_id):
     resp.set_cookie(f'sem_{group_id}', str(raw_sem))
     return resp
 
-
-
 # --- API ---
 
 @main_bp.route('/api/add_anno', methods=['POST'])
@@ -716,4 +716,3 @@ def transfer_student():
         
     db.session.commit()
     return jsonify({'ok':True})
-
