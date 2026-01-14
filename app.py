@@ -4,6 +4,22 @@ from flask_login import LoginManager
 from database import db
 from models import User
 
+def get_current_sg(student, lesson_date):
+    # Если истории нет, берем обычную подгруппу (для страховки)
+    if 'history' not in student or not student['history']:
+        return student.get('subgroup', 0)
+    
+    # Сортируем историю от новых к старым
+    hist = sorted(student['history'], key=lambda x: x['date'], reverse=True)
+    
+    # Ищем первую запись, которая была ДО или В ДЕНЬ урока
+    for record in hist:
+        if record['date'] <= lesson_date:
+            return record['val']
+            
+    # Если урок был совсем давно, берем самую первую запись
+    return hist[-1]['val']
+
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'change_me_to_random_string'
