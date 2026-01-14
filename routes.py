@@ -5,7 +5,6 @@ from models import User, Group, Student, Lesson, Mark, Plan, Announcement
 import json
 from datetime import datetime
 
-
 main_bp = Blueprint('main', __name__)
 
 # --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
@@ -37,24 +36,11 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     else: return 3
 
 def get_real_sg(student, lesson_date_str):
-    # 1. Получаем историю (если её нет — пустой список)
-    # Используем getattr, чтобы не было ошибки, если поля еще нет в БД
     hist = getattr(student, 'history', []) 
-    
-    # 2. Если истории нет, возвращаем текущую подгруппу (как раньше)
-    if not hist: 
-        return student.subgroup
-        
-    # 3. Сортируем историю от новых к старым
-    # Ожидаем формат: [{'date': '2026-02-01', 'val': 2}, ...]
+    if not hist: return student.subgroup
     hist = sorted(hist, key=lambda x: x['date'], reverse=True)
-    
-    # 4. Ищем запись
     for record in hist:
-        if record['date'] <= lesson_date_str:
-            return record['val']
-            
-    # 5. Если урок был до начала истории — берем самую старую запись
+        if record['date'] <= lesson_date_str: return record['val']
     return hist[-1]['val']
 
 # --- МАРШРУТЫ ---
@@ -115,7 +101,6 @@ def admin_panel():
     total_marks = Mark.query.filter(Mark.grade != None).count()
     avg_score = round(sum([m.grade for m in Mark.query.filter(Mark.grade != None).all()]) / total_marks, 2) if total_marks > 0 else 0
 
-    # Стили для KPI карточек в стиле Lavender
     kpi_style = "background:white; padding:25px; border-radius:24px; box-shadow:var(--shadow); display:flex; flex-direction:column; justify-content:space-between; min-height:120px;"
 
     html = f"""
@@ -183,7 +168,6 @@ def stats_view(group_id):
     students = group.students
     lessons = sorted(group.lessons, key=lambda l: parse_date(l.date))
     
-    # Сбор данных
     grades_count = {5:0, 4:0, 3:0, 2:0}
     status_count = {'present':0, 'absent':0, 'sick':0}
     total_marks_count = 0
@@ -416,7 +400,6 @@ def board_view(group_id):
 
 @main_bp.route('/group/<path:group_id>')
 @login_required
-
 def group_view(group_id):
     if current_user.role != 'admin' and current_user.access_group != group_id: return "Access denied"
     raw_sem = request.args.get('sem') or request.cookies.get(f'sem_{group_id}', '1')
@@ -438,7 +421,6 @@ def group_view(group_id):
     prog = int((passed_hours / total_h * 100)) if total_h > 0 else 0
     is_adm = (current_user.role == 'admin')
     
-    # JSON плана для редактирования
     plan_edit = Plan.query.filter_by(group_id=group_id, semester=(1 if sem_active=='all' else sem_active)).first()
     plan_js = json.dumps(plan_edit.get_data() if plan_edit else []).replace('"', '&quot;')
     
@@ -449,14 +431,12 @@ def group_view(group_id):
                 <h1 style="margin:0; font-size:2rem; color:var(--text-main);">Группа {group.id}</h1>
                 <div style="font-size:1rem; color:var(--text-muted);">{group.subject}</div>
             </div>
-            
             <div class="sem-toggle">
                 <a href="?sem=1" class="sem-btn {'active' if sem_active==1 else ''}" style="text-decoration:none;">1 Сем</a>
                 <a href="?sem=2" class="sem-btn {'active' if sem_active==2 else ''}" style="text-decoration:none;">2 Сем</a>
                 <a href="?sem=all" class="sem-btn {'active' if sem_active=='all' else ''}" style="text-decoration:none;">Весь год</a>
             </div>
         </div>
-        
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <a href="{url_for('main.stats_view', group_id=group.id)}" class="btn" style="text-decoration:none; white-space:nowrap;">📊 Статистика</a>
             <a href="{url_for('main.board_view', group_id=group.id)}" class="btn" style="text-decoration:none; white-space:nowrap;">📋 Объявления</a>
@@ -500,7 +480,6 @@ def group_view(group_id):
         sum_grades = 0; count_grades = 0
         for l in lessons:
             m = next((x for x in s.marks if x.lesson_id==l.id), None)
-            
             real_sg = get_real_sg(s, l.date)
             is_bl = (l.subgroup_target!=0 and l.subgroup_target!=real_sg)
             
@@ -510,7 +489,6 @@ def group_view(group_id):
                 if status == 'sick': bg_cls = "cell-sick"
                 elif status == 'absent': bg_cls = "cell-absent"
                 else: bg_cls = "cell-present"
-
                 if m and m.grade:
                     old_html = f"<div class='old-g'>{m.old_grade}</div>" if m.old_grade else ""
                     html_mk = f"<div class='mark-circle v{m.grade}'>{m.grade}{old_html}</div>"
@@ -535,12 +513,10 @@ def group_view(group_id):
     <div id="modalTr" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
         <div style="background:white; padding:30px; border-radius:24px; width:320px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
             <h3 style="margin-top:0;">Перевод студента</h3>
-            
             <div style="margin-bottom:15px;">
                 <label style="font-size:0.8rem; font-weight:bold; color:#64748B;">С какой даты:</label>
                 <input type="date" id="tr_date" class="inp" style="width:100%;">
             </div>
-            
             <div style="margin-bottom:25px;">
                 <label style="font-size:0.8rem; font-weight:bold; color:#64748B;">В какую подгруппу:</label>
                 <div style="display:flex; gap:10px; margin-top:5px;">
@@ -548,13 +524,11 @@ def group_view(group_id):
                     <div id="btn_tr_2" onclick="selTr(2)" class="sem-btn" style="flex:1; text-align:center; cursor:pointer;">2</div>
                 </div>
             </div>
-            
             <input type="hidden" id="tr_sid">
             <button onclick="saveTr()" class="btn btn-prim" style="width:100%; justify-content:center; margin-bottom:10px;">Сохранить</button>
             <button onclick="document.getElementById('modalTr').style.display='none'" class="btn" style="width:100%; justify-content:center;">Отмена</button>
         </div>
     </div>
-
     <script>
     let curTrSg = 1;
     function openTr(sid) {
@@ -702,7 +676,6 @@ def transfer_student():
     if not s: return "Err", 404
     
     # 1. Создаем запись в истории
-    # Важно: создаем копию списка, добавляем и перезаписываем, чтобы SQLAlchemy увидел изменение
     new_record = {'date': data['date'], 'val': int(data['sg'])}
     
     current_hist = list(s.history) if s.history else []
@@ -710,7 +683,6 @@ def transfer_student():
     s.history = current_hist
     
     # 2. Обновляем текущую группу (чтобы в списке он сразу стал отображаться правильно)
-    # Если дата перевода <= сегодня, то меняем подгруппу сразу
     if data['date'] <= datetime.now().strftime('%Y-%m-%d'):
         s.subgroup = int(data['sg'])
         
