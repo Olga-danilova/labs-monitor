@@ -18,36 +18,40 @@ def create_app():
             os.makedirs(app.instance_path)
         except OSError:
             pass
-            
+    
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+    
     db.init_app(app)
     
-    login_manager = LoginManager(app)
-    login_manager.login_view = 'main.login' # <-- Важно: main.login
-
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице.'
+    login_manager.init_app(app)
+    
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.get(User, user_id)
-
+        return User.query.get(int(user_id))
+    
+    # Регистрируем blueprints
+    from routes.auth import auth_bp
+    from routes.main import main_bp
+    from routes.admin import admin_bp
+    
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(admin_bp)
+    
+    # Создаём таблицы при первом запуске
     with app.app_context():
         db.create_all()
-        # Создаем админа, если его нет
-        if not db.session.get(User, 'admin'):
-            # Логин: admin, Пароль: admin
-            admin = User(id='admin', password='admin', role='admin', access_group='all')
-            db.session.add(admin)
-            db.session.commit()
-
-    # Регистрируем маршруты из routes.py
-    from routes import main_bp
-    app.register_blueprint(main_bp)
-
+        # Создаём администратора по умолчанию
+        from utils import create_default_admin
+        create_default_admin()
+    
     return app
+
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=8080)
-
-
+    app.run(debug=True, host='0.0.0.0', port=8000)
