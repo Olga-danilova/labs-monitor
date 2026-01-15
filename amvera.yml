@@ -6,4 +6,4 @@ meta:
 
 run:
   scriptName: app.py
-  containerPort: 8080
+    containerPort: 8000
