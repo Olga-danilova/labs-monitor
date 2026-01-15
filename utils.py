@@ -102,3 +102,21 @@ def hash_password(password):
 def verify_password(password_hash, password):
     """Проверяет пароль."""
     return check_password_hash(password_hash, password)
+
+
+def create_default_admin():
+    """Создает администратора по умолчанию, если его еще нет."""
+    from database import db
+    from models import User
+    
+    admin = User.query.filter_by(role='admin').first()
+    if not admin:
+        admin = User(
+            id='admin',
+            password=hash_password('admin123'),
+            role='admin',
+            access_group=None
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print('Создан администратор по умолчанию: admin / admin123')
