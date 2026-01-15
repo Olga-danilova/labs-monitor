@@ -34,14 +34,10 @@ def create_app():
         return User.query.get(int(user_id))
     
     # Регистрируем blueprints
-    from routes.auth import auth_bp
-    from routes.main import main_bp
-    from routes.admin import admin_bp
+    # Регистрируем blueprints
+    from routes import main_bp    
     
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(main_bp)
-    app.register_blueprint(admin_bp)
-    
+    app.register_blueprint(main_bp)    
     # Создаём таблицы при первом запуске
     with app.app_context():
         db.create_all()
