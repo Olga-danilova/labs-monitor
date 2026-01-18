@@ -28,8 +28,8 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     for i in range(target_idx + 1, len(all_lessons)):
         next_l = all_lessons[i]
         if parse_date(next_l.date) > today: break
-        Grade = next((m for m in student.Grades if m.lesson_id == next_l.id), None)
-        if Grade and Grade.status == 'sick': continue 
+        grade = next((m for m in student.grades if m.lesson_id == next_l.id), None)
+        if grade and grade.status == 'sick': continue 
         passed_chances += 1
     if passed_chances <= 1: return 5
     elif passed_chances == 2: return 4
@@ -180,7 +180,7 @@ def stats_view(group_id):
         s_grades = []
         s_presents = 0
         s_total_lessons = 0
-        for m in s.Grades:
+        for m in s.grades:
             if m.grade: 
                 grades_count[m.grade] = grades_count.get(m.grade, 0) + 1
                 total_Grades_count += 1
@@ -196,7 +196,7 @@ def stats_view(group_id):
     top_students = sorted(student_ratings, key=lambda x: x['avg'], reverse=True)[:5]
     
     for l in lessons:
-        l_grades = [m.grade for m in l.Grades if m.grade]
+        l_grades = [m.grade for m in l.grades if m.grade]
         if l_grades:
             l_avg = round(sum(l_grades) / len(l_grades), 2)
             dates_labels.append(l.date[5:]) 
@@ -479,7 +479,7 @@ def group_view(group_id):
         
         sum_grades = 0; count_grades = 0
         for l in lessons:
-            m = next((x for x in s.Grades if x.lesson_id==l.id), None)
+            m = next((x for x in s.grades if x.lesson_id==l.id), None)
             real_sg = get_real_sg(s, l.date)
             is_bl = (l.subgroup_target!=0 and l.subgroup_target!=real_sg)
             
