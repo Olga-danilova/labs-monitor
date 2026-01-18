@@ -1,5 +1,4 @@
-:31
- flask import Blueprint, render_template, redirect, url_for, request, jsonify, make_response
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, make_response
 from flask_login import login_user, login_required, logout_user, current_user
 from database import db
 from models import User, Group, Student, Lesson, Grade, Plan, Announcement
