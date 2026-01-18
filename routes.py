@@ -28,7 +28,7 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     passed_chances = 0
     for i in range(target_idx + 1, len(all_lessons)):
         next_l = all_lessons[i]
-        if parse_date(next_l.date) > today: break
+                   if parse_date(next_l.date) > today: break
                         mark = next((m for m in student.grades if m.lesson_id == next_l.id), None)
                         if mark and mark.status == 'sick': continue
     elif passed_chances == 2: return 4
