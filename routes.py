@@ -28,7 +28,7 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     for i in range(target_idx + 1, len(all_lessons)):
         next_l = all_lessons[i]
         if parse_date(next_l.date) > today: break
-         = next((m for m in student.s if m.lesson_id == next_l.id), None)
+         mark = next((m for m in  student.grades if m.lesson_id == next_l.id), None)
         if  and .status == 'sick': continue 
         passed_chances += 1
     if passed_chances <= 1: return 5
@@ -37,7 +37,7 @@ def calculate_max_grade(student, target_lesson, all_lessons):
 
 def get_real_sg(student, lesson_date_str):
     hist = getattr(student, 'history', []) 
-    if not hist: return student.subgroup
+    if not hist: return ubgroup
     hist = sorted(hist, key=lambda x: x['date'], reverse=True)
     for record in hist:
         if record['date'] <= lesson_date_str: return record['val']
