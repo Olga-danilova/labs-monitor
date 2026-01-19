@@ -39,44 +39,42 @@ class Student(db.Model):
 class Lesson(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     date = db.Column(db.Date, nullable=False)
-    lesson_type = db.Column(db.String(50), default='Лекция')  # Лекция, Практика
-    theme = db.Column(db.String(200), default='')
-    subgroup = db.Column(db.Integer, nullable=True)  # null = общее, 1/2 = подгруппа
-    group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
+    type = db.Column(db.String(50), default='Лекция')  # Лекция, Практика
+        hours = db.Column(db.Integer, default=2)
+    number = db.Column(db.Integer, nullable=True)  # Номер работы
+    subgroup_target = db.Column(db.Integer, default=0)  # 0=все, 1/2=подгруппаtheme = db.Column(db.String(200), default='')
     
     # Связь с оценками
     grades = db.relationship('Grade', backref='lesson', lazy=True, cascade="all, delete-orphan")
+
+
 
 
 class Grade(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     student_id = db.Column(db.String(50), db.ForeignKey('student.id'), nullable=False)
     lesson_id = db.Column(db.String(50), db.ForeignKey('lesson.id'), nullable=False)
-    attendance = db.Column(db.String(20), default='Не отмечен')  # Присутствовал, Отсутствовал, Не отмечен
-    lab_statuses = db.Column(db.Text, default='{}')  # JSON: {"1": "Сдано", "2": "Не сдано", ...}
-    notes = db.Column(db.Text, default='')  # Примечания
-    
-    def get_lab_statuses(self):
-        try:
-            return json.loads(self.lab_statuses)
-        except:
-            return {}
-    
-    def set_lab_statuses(self, data):
-        self.lab_statuses = json.dumps(data, ensure_ascii=False)
+    status = db.Column(db.String(20), default='present')  # 'present', 'absent', 'sick'
+    grade = db.Column(db.Integer, nullable=True)  # Оценка: 2, 3, 4, 5 или None
 
 
 class Plan(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, default='')
     group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    semester = db.Column(db.Integer, nullable=False)  # 1 или 2
+    data = db.Column(db.Text, default='[]')  # JSON с планом
+    
+    def get_data(self):
+        try:
+            return json.loads(self.data)
+        except:
+            return []
+    
+    def set_data(self, data_list):
+        self.data = json.dumps(data_list, ensure_ascii=False)
 
 class Announcement(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    is_important = db.Column(db.Boolean, default=False)
     group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
