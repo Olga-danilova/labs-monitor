@@ -4,6 +4,7 @@ from database import db
 from models import User, Group, Student, Lesson, Grade, Plan, Announcement
 import json
 from datetime import datetime
+from utils import verify_password
 
 main_bp = Blueprint('main', __name__)
 
@@ -56,8 +57,7 @@ def index():
 def login():
     if request.method == 'POST':
         user = User.query.get(request.form.get('id'))
-        if user and user.password == request.form.get('password'):
-            login_user(user)
+        if user and verify_password(user.password, request.form.get('password')):            login_user(user)
             return redirect(url_for('main.index'))
         else:
             return render_app("""
