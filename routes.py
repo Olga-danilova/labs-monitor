@@ -58,8 +58,9 @@ def login():
     if request.method == 'POST':
         user = User.query.get(request.form.get('id'))
         if user and verify_password(user.password, request.form.get('password')):            login_user(user)
+            login_user(user)
             return redirect(url_for('main.index'))
-        else:
+    else:
             return render_app("""
                 <div style="display:flex; justify-content:center; align-items:center; height:80vh;">
                     <div style="width:100%; max-width:400px; text-align:center;">
