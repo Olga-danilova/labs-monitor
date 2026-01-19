@@ -1,10 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, make_response
 from flask_login import login_user, login_required, logout_user, current_user
 from database import db
-from models import User, Group, Student, Lesson, Grade, Plan, Announcement
+from models import User, Group, Student, Lesson, Mark, Plan, Announcement
 import json
 from datetime import datetime
-from utils import verify_password
 
 main_bp = Blueprint('main', __name__)
 
@@ -29,8 +28,8 @@ def calculate_max_grade(student, target_lesson, all_lessons):
     for i in range(target_idx + 1, len(all_lessons)):
         next_l = all_lessons[i]
         if parse_date(next_l.date) > today: break
-        grade = next((m for m in student.grades if m.lesson_id == next_l.id), None)
-        if grade and grade.status == 'sick': continue 
+        mark = next((m for m in student.marks if m.lesson_id == next_l.id), None)
+        if mark and mark.status == 'sick': continue 
         passed_chances += 1
     if passed_chances <= 1: return 5
     elif passed_chances == 2: return 4
@@ -57,12 +56,12 @@ def index():
 def login():
     if request.method == 'POST':
         user = User.query.get(request.form.get('id'))
-        if user and verify_password(user.password, request.form.get('password')):
-                        login_user(user)
-                return redirect(url_for('main.index'))
-    else:
+        if user and user.password == request.form.get('password'):
+            login_user(user)
+            return redirect(url_for('main.index'))
+        else:
             return render_app("""
-                <div style="display:flex; justify-content:center; align-items:center; height:80vh;
+                <div style="display:flex; justify-content:center; align-items:center; height:80vh;">
                     <div style="width:100%; max-width:400px; text-align:center;">
                         <h1 style="color:var(--primary); margin-bottom:30px;">Вход в систему</h1>
                         <form method="POST" style="background:white; padding:40px; border-radius:24px; box-shadow:var(--shadow);">
@@ -99,8 +98,8 @@ def admin_panel():
     
     groups = Group.query.all()
     total_students = Student.query.count()
-    total_Grades = Grade.query.filter(Grade.grade != None).count()
-    avg_score = round(sum([m.grade for m in Grade.query.filter(Grade.grade != None).all()]) / total_Grades, 2) if total_Grades > 0 else 0
+    total_marks = Mark.query.filter(Mark.grade != None).count()
+    avg_score = round(sum([m.grade for m in Mark.query.filter(Mark.grade != None).all()]) / total_marks, 2) if total_marks > 0 else 0
 
     kpi_style = "background:white; padding:25px; border-radius:24px; box-shadow:var(--shadow); display:flex; flex-direction:column; justify-content:space-between; min-height:120px;"
 
@@ -171,7 +170,7 @@ def stats_view(group_id):
     
     grades_count = {5:0, 4:0, 3:0, 2:0}
     status_count = {'present':0, 'absent':0, 'sick':0}
-    total_Grades_count = 0
+    total_marks_count = 0
     student_ratings = []
     dates_labels = []
     dates_avg_values = []
@@ -181,10 +180,10 @@ def stats_view(group_id):
         s_grades = []
         s_presents = 0
         s_total_lessons = 0
-        for m in s.grades:
+        for m in s.marks:
             if m.grade: 
                 grades_count[m.grade] = grades_count.get(m.grade, 0) + 1
-                total_Grades_count += 1
+                total_marks_count += 1
                 s_grades.append(m.grade)
             if m.status: status_count[m.status] = status_count.get(m.status, 0) + 1
             if m.lesson_id: 
@@ -197,7 +196,7 @@ def stats_view(group_id):
     top_students = sorted(student_ratings, key=lambda x: x['avg'], reverse=True)[:5]
     
     for l in lessons:
-        l_grades = [m.grade for m in l.grades if m.grade]
+        l_grades = [m.grade for m in l.marks if m.grade]
         if l_grades:
             l_avg = round(sum(l_grades) / len(l_grades), 2)
             dates_labels.append(l.date[5:]) 
@@ -211,7 +210,7 @@ def stats_view(group_id):
         vals = types_stats[t]
         types_values.append(round(sum(vals)/len(vals), 2) if vals else 0)
 
-    avg_total = round(sum([k*v for k,v in grades_count.items()]) / total_Grades_count, 2) if total_Grades_count > 0 else 0
+    avg_total = round(sum([k*v for k,v in grades_count.items()]) / total_marks_count, 2) if total_marks_count > 0 else 0
     total_att_events = sum(status_count.values())
     att_perc_total = int((status_count['present'] + status_count['sick']) / total_att_events * 100) if total_att_events > 0 else 0
 
@@ -252,7 +251,7 @@ def stats_view(group_id):
         </div>
         <div class="stat-card">
             <div class="stat-label">Оценок</div>
-            <div class="stat-val" style="color:var(--yellow-text);">{total_Grades_count}</div>
+            <div class="stat-val" style="color:var(--yellow-text);">{total_marks_count}</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Студентов</div>
@@ -480,7 +479,7 @@ def group_view(group_id):
         
         sum_grades = 0; count_grades = 0
         for l in lessons:
-            m = next((x for x in s.grades if x.lesson_id==l.id), None)
+            m = next((x for x in s.marks if x.lesson_id==l.id), None)
             real_sg = get_real_sg(s, l.date)
             is_bl = (l.subgroup_target!=0 and l.subgroup_target!=real_sg)
             
@@ -492,7 +491,7 @@ def group_view(group_id):
                 else: bg_cls = "cell-present"
                 if m and m.grade:
                     old_html = f"<div class='old-g'>{m.old_grade}</div>" if m.old_grade else ""
-                    html_mk = f"<div class='Grade-circle v{m.grade}'>{m.grade}{old_html}</div>"
+                    html_mk = f"<div class='mark-circle v{m.grade}'>{m.grade}{old_html}</div>"
                     sum_grades += m.grade; count_grades += 1
                 elif m and m.status == 'sick': html_mk = "<span style='font-size:0.8rem; font-weight:800; color:var(--purple-text);'>Спр</span>"
                 elif m and m.status == 'absent': html_mk = "<span style='font-size:0.8rem; font-weight:800; color:var(--red-text);'>Н</span>"
@@ -585,8 +584,8 @@ def delete_anno():
 def save_grade():
     if current_user.role != 'admin': return jsonify({'error':'denied'}), 403
     data = request.json
-    m = Grade.query.filter_by(student_id=data['sid'], lesson_id=data['cid']).first()
-    if not m: m = Grade(student_id=data['sid'], lesson_id=data['cid']); db.session.add(m)
+    m = Mark.query.filter_by(student_id=data['sid'], lesson_id=data['cid']).first()
+    if not m: m = Mark(student_id=data['sid'], lesson_id=data['cid']); db.session.add(m)
     
     if data['gr'] is not None and m.grade is not None and m.grade != data['gr']: m.old_grade = m.grade
     if data['gr'] is None: m.old_grade = None
