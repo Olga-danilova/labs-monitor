@@ -67,7 +67,7 @@ def login():
                         <h1 style="color:var(--primary); margin-bottom:30px;">Вход в систему</h1>
                         <form method="POST" style="background:white; padding:40px; border-radius:24px; box-shadow:var(--shadow);">
                             <input class="inp" name="id" placeholder="Логин" style="width:100%" required>
-                            <input class="inp" type="password" name="password" pla style="width:100%"ceholder="Пароль" required>
+                            <input class="inp" type="password" name="passw style="width:100%" placeholder="Пароль" required>
                             <button class="btn btn-prim" style="width:100%; justify-content:center;">Войти</button>
                         </form>
                     </div>
