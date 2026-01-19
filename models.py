@@ -4,13 +4,11 @@ from flask_login import UserMixin
 from database import db
 from datetime import datetime
 
-
 class User(UserMixin, db.Model):
     id = db.Column(db.String(50), primary_key=True)
     password = db.Column(db.String(100))
     role = db.Column(db.String(20))  # 'admin', 'teacher', 'student'
     access_group = db.Column(db.String(50), nullable=True)  # для учителя/студента
-
 
 class Group(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -25,7 +23,6 @@ class Group(db.Model):
     # Связь с объявлениями
     announcements = db.relationship('Announcement', backref='group', lazy=True, cascade="all, delete-orphan")
 
-
 class Student(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(100), nullable=False)
@@ -35,21 +32,19 @@ class Student(db.Model):
     # Связь с оценками
     grades = db.relationship('Grade', backref='student', lazy=True, cascade="all, delete-orphan")
 
-
 class Lesson(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     date = db.Column(db.Date, nullable=False)
     type = db.Column(db.String(50), default='Лекция')  # Лекция, Практика
-        hours = db.Column(db.Integer, default=2)
+    hours = db.Column(db.Integer, default=2)
     number = db.Column(db.Integer, nullable=True)  # Номер работы
     subgroup_target = db.Column(db.Integer, default=0)  # 0=все, 1/2=подгруппа
     theme = db.Column(db.String(200), default='')
-
+    group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
+    semester = db.Column(db.Integer, default=1)
+    
     # Связь с оценками
     grades = db.relationship('Grade', backref='lesson', lazy=True, cascade="all, delete-orphan")
-
-
-
 
 class Grade(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -57,7 +52,6 @@ class Grade(db.Model):
     lesson_id = db.Column(db.String(50), db.ForeignKey('lesson.id'), nullable=False)
     status = db.Column(db.String(20), default='present')  # 'present', 'absent', 'sick'
     grade = db.Column(db.Integer, nullable=True)  # Оценка: 2, 3, 4, 5 или None
-
 
 class Plan(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -76,6 +70,7 @@ class Plan(db.Model):
 
 class Announcement(db.Model):
     id = db.Column(db.String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
+    text = db.Column(db.Text, default='')
     is_important = db.Column(db.Boolean, default=False)
     group_id = db.Column(db.String(50), db.ForeignKey('group.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
