@@ -58,7 +58,7 @@ def login():
     if request.method == 'POST':
         user = User.query.get(request.form.get('id'))
         if user and verify_password(user.password, request.form.get('password')):            61
-                        login_user(user)
+                                    login_user(user)
            return redirect(url_for('main.index'))
     else:
             return render_app("""
