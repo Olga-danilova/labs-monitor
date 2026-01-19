@@ -44,7 +44,7 @@ class Lesson(db.Model):
     number = db.Column(db.Integer, nullable=True)  # Номер работы
     subgroup_target = db.Column(db.Integer, default=0)  # 0=все, 1/2=подгруппа
     theme = db.Column(db.String(200), default='')
-    
+
     # Связь с оценками
     grades = db.relationship('Grade', backref='lesson', lazy=True, cascade="all, delete-orphan")
 
