@@ -58,11 +58,11 @@ def login():
     if request.method == 'POST':
         user = User.query.get(request.form.get('id'))
         if user and verify_password(user.password, request.form.get('password')):
-                        login_user(user)61
+                        login_user(user)
            return redirect(url_for('main.index'))
     else:
             return render_app("""
-                <div style="display:flex; justify-content:center; align-items:center; height:80vh;">
+                <div style="display:flex; justify-content:center; align-items:center; height:80vh;
                     <div style="width:100%; max-width:400px; text-align:center;">
                         <h1 style="color:var(--primary); margin-bottom:30px;">Вход в систему</h1>
                         <form method="POST" style="background:white; padding:40px; border-radius:24px; box-shadow:var(--shadow);">
