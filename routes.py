@@ -638,7 +638,7 @@ def add_column():
     sem = 1 if raw_sem == 'all' else int(raw_sem)
     if gid:
         num = request.form.get('number')
-                db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=int(num), semester=sem, theme=request.form.get('theme')))
+        db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=int(num), semester=sem, theme=request.form.get('theme')))
         db.session.commit()
         return redirect(url_for('main.group_view', group_id=gid))
     return "Err"
