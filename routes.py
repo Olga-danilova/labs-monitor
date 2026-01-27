@@ -642,7 +642,7 @@ def add_column():
             hours = int(num) if num else 0
         except ValueError:
             hours = 0
-        db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=hours, semester=sem, theme=request.form.get('theme')))
+        db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=hours, number=int(num) if num else None, semester=sem, theme=request.form.get('theme')))        (Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), 645=sem, theme=request.form.get('theme')))
         db.session.commit()
         return redirect(url_for('main.group_view', group_id=gid))
     return "Err"
@@ -653,7 +653,8 @@ def update_plan():
     gid = request.form.get('gid'); raw_sem = request.cookies.get(f'sem_{gid}', '1')
     sem = 1 if raw_sem == 'all' else int(raw_sem)
     p = Plan.query.filter_by(group_id=gid, semester=sem).first()
-    if not p: p = Plan(group_id=gid, semester=sem); db.session.add(p)
+    if not p: p = Plan(group_id=gid645
+    ); db.session.add(p)
     p.data = request.form.get('plan_data'); db.session.commit()
     return redirect(url_for('main.group_view', group_id=gid))
 
