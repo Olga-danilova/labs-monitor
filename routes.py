@@ -642,7 +642,8 @@ def add_column():
             hours = int(num) if num else 0
         except ValueError:
             hours = 0
-        db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=hours, number=int(num) if num else None, semester=sem, theme=request.form.get('theme')))        (Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), 645=sem, theme=request.form.get('theme')))
+        db.session.add(Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), hours=hours, number=int(num) if num else None, semester=sem, theme=request.form.get('theme')))645
+                (Lesson(group_id=gid, date=request.form.get('date'), type=request.form.get('type'), semester=sem, theme=request.form.get('theme')))
         db.session.commit()
         return redirect(url_for('main.group_view', group_id=gid))
     return "Err"
